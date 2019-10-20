@@ -34,6 +34,7 @@ from .internals import MsgId, MsgFactory
 
 log = logging.getLogger(__name__)
 
+executor = None
 
 class Result:
     def __init__(self):
@@ -217,7 +218,6 @@ class Session:
 
     async def net_worker(self):
         logging.info("NetWorkerTask started")
-
         while True:
             packet = await self.recv_queue.get()
 
@@ -225,7 +225,9 @@ class Session:
                 break
 
             try:
-                data = MTProto.unpack(
+                data = await loop.run_in_executor(
+                    executor,
+                    MTProto.unpack,
                     BytesIO(packet),
                     self.session_id,
                     self.auth_key,
@@ -364,8 +366,12 @@ class Session:
 
         if wait_response:
             self.results[msg_id] = Result()
+        
+        loop = asyncio.get_event_loop()
 
-        payload = MTProto.pack(
+        payload = await loop.run_in_executor(
+            executor,
+            MTProto.pack,
             message,
             self.current_salt.salt,
             self.session_id,
