@@ -218,6 +218,9 @@ class Session:
 
     async def net_worker(self):
         logging.info("NetWorkerTask started")
+        
+        loop = asyncio.get_event_loop()
+        
         while True:
             packet = await self.recv_queue.get()
 
