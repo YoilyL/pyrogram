@@ -30,11 +30,14 @@ from pyrogram.api.core import TLObject, MsgContainer, Int, Long, FutureSalt, Fut
 from pyrogram.connection import Connection
 from pyrogram.crypto import MTProto
 from pyrogram.errors import RPCError, InternalServerError, AuthKeyDuplicated
+from concurrent.futures import ThreadPoolExecutor
+import os
+
 from .internals import MsgId, MsgFactory
 
 log = logging.getLogger(__name__)
 
-executor = None
+executor = ThreadPoolExecutor(os.cpu_count() or 1)
 
 class Result:
     def __init__(self):
