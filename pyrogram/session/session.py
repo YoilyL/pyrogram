@@ -37,7 +37,16 @@ from .internals import MsgId, MsgFactory
 
 log = logging.getLogger(__name__)
 
-executor = ThreadPoolExecutor()
+executor = ThreadPoolExecutor(os.cpu_count() or 4)
+
+# def make_async(func):
+#     async def decorated(*args):
+#         loop = asyncio.get_event_loop()
+#         return await loop.run_in_executor(executor,func,*args)
+#     return decorated
+
+# MTProto.pack = make_async(MTProto.pack)
+# MTProto.unpack = make_async(MTProto.unpack)
 
 class Result:
     def __init__(self):
