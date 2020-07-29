@@ -1,20 +1,20 @@
-# Pyrogram - Telegram MTProto API Client Library for Python
-# Copyright (C) 2017-2019 Dan Tès <https://github.com/delivrance>
+#  Pyrogram - Telegram MTProto API Client Library for Python
+#  Copyright (C) 2017-2020 Dan <https://github.com/delivrance>
 #
-# This file is part of Pyrogram.
+#  This file is part of Pyrogram.
 #
-# Pyrogram is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as published
-# by the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+#  Pyrogram is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Lesser General Public License as published
+#  by the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
 #
-# Pyrogram is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Lesser General Public License for more details.
+#  Pyrogram is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser General Public License for more details.
 #
-# You should have received a copy of the GNU Lesser General Public License
-# along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
+#  You should have received a copy of the GNU Lesser General Public License
+#  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 from typing import Union, Iterable, List
 
@@ -32,7 +32,8 @@ class ForwardMessages(BaseClient):
         message_ids: Union[int, Iterable[int]],
         disable_notification: bool = None,
         as_copy: bool = False,
-        remove_caption: bool = False
+        remove_caption: bool = False,
+        schedule_date: int = None
     ) -> List["pyrogram.Message"]:
         """Forward messages of any kind.
 
@@ -64,6 +65,9 @@ class ForwardMessages(BaseClient):
                 If set to True and *as_copy* is enabled as well, media captions are not preserved when copying the
                 message. Has no effect if *as_copy* is not enabled.
                 Defaults to False.
+
+            schedule_date (``int``, *optional*):
+                Date when the message will be automatically sent. Unix time.
 
         Returns:
             :obj:`Message` | List of :obj:`Message`: In case *message_ids* was an integer, the single forwarded message
@@ -99,7 +103,8 @@ class ForwardMessages(BaseClient):
                             chat_id,
                             disable_notification=disable_notification,
                             as_copy=True,
-                            remove_caption=remove_caption
+                            remove_caption=remove_caption,
+                            schedule_date=schedule_date
                         )
                     )
 
@@ -111,7 +116,8 @@ class ForwardMessages(BaseClient):
                     from_peer=await self.resolve_peer(from_chat_id),
                     id=message_ids,
                     silent=disable_notification or None,
-                    random_id=[self.rnd_id() for _ in message_ids]
+                    random_id=[self.rnd_id() for _ in message_ids],
+                    schedule_date=schedule_date
                 )
             )
 
@@ -121,7 +127,7 @@ class ForwardMessages(BaseClient):
             chats = {i.id: i for i in r.chats}
 
             for i in r.updates:
-                if isinstance(i, (types.UpdateNewMessage, types.UpdateNewChannelMessage)):
+                if isinstance(i, (types.UpdateNewMessage, types.UpdateNewChannelMessage, types.UpdateNewScheduledMessage)):
                     forwarded_messages.append(
                         await pyrogram.Message._parse(
                             self, i.message,

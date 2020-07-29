@@ -1,22 +1,22 @@
-# Pyrogram - Telegram MTProto API Client Library for Python
-# Copyright (C) 2017-2019 Dan Tès <https://github.com/delivrance>
+#  Pyrogram - Telegram MTProto API Client Library for Python
+#  Copyright (C) 2017-2020 Dan <https://github.com/delivrance>
 #
-# This file is part of Pyrogram.
+#  This file is part of Pyrogram.
 #
-# Pyrogram is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as published
-# by the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+#  Pyrogram is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Lesser General Public License as published
+#  by the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
 #
-# Pyrogram is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Lesser General Public License for more details.
+#  Pyrogram is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser General Public License for more details.
 #
-# You should have received a copy of the GNU Lesser General Public License
-# along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
+#  You should have received a copy of the GNU Lesser General Public License
+#  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union, List
+from typing import Union, List, Generator, Optional
 
 import pyrogram
 from pyrogram.api import types
@@ -43,6 +43,9 @@ class Chat(Object):
         is_restricted (``bool``, *optional*):
             True, if this chat has been restricted. Supergroups, channels and bots only.
             See *restriction_reason* for details.
+
+        is_creator (``bool``, *optional*):
+            True, if this chat owner is the current user. Supergroups, channels and groups only.
 
         is_scam (``bool``, *optional*):
             True, if this chat has been flagged for scam. Supergroups, channels and bots only.
@@ -108,6 +111,7 @@ class Chat(Object):
         type: str,
         is_verified: bool = None,
         is_restricted: bool = None,
+        is_creator: bool = None,
         is_scam: bool = None,
         is_support: bool = None,
         title: str = None,
@@ -131,6 +135,7 @@ class Chat(Object):
         self.type = type
         self.is_verified = is_verified
         self.is_restricted = is_restricted
+        self.is_creator = is_creator
         self.is_scam = is_scam
         self.is_support = is_support
         self.title = title
@@ -175,6 +180,7 @@ class Chat(Object):
             id=peer_id,
             type="group",
             title=chat.title,
+            is_creator=getattr(chat, "creator", None),
             photo=ChatPhoto._parse(client, getattr(chat, "photo", None), peer_id, 0),
             permissions=ChatPermissions._parse(getattr(chat, "default_banned_rights", None)),
             members_count=getattr(chat, "participants_count", None),
@@ -191,6 +197,7 @@ class Chat(Object):
             type="supergroup" if channel.megagroup else "channel",
             is_verified=getattr(channel, "verified", None),
             is_restricted=getattr(channel, "restricted", None),
+            is_creator=getattr(channel, "creator", None),
             is_scam=getattr(channel, "scam", None),
             title=channel.title,
             username=getattr(channel, "username", None),
@@ -516,15 +523,8 @@ class Chat(Object):
     async def restrict_member(
         self,
         user_id: Union[int, str],
+        permissions: ChatPermissions,
         until_date: int = 0,
-        can_send_messages: bool = False,
-        can_send_media_messages: bool = False,
-        can_send_other_messages: bool = False,
-        can_add_web_page_previews: bool = False,
-        can_send_polls: bool = False,
-        can_change_info: bool = False,
-        can_invite_users: bool = False,
-        can_pin_messages: bool = False
     ) -> "pyrogram.Chat":
         """Bound method *unban_member* of :obj:`Chat`.
 
@@ -534,49 +534,27 @@ class Chat(Object):
 
             client.restrict_chat_member(
                 chat_id=chat_id,
-                user_id=user_id
+                user_id=user_id,
+                permissions=ChatPermission()
             )
 
         Example:
             .. code-block:: python
 
-                chat.restrict_member(123456789)
+                chat.restrict_member(user_id, ChatPermission())
 
         Parameters:
             user_id (``int`` | ``str``):
                 Unique identifier (int) or username (str) of the target user.
                 For a contact that exists in your Telegram address book you can use his phone number (str).
 
+            permissions (:obj:`ChatPermissions`):
+                New user permissions.
+
             until_date (``int``, *optional*):
                 Date when the user will be unbanned, unix time.
                 If user is banned for more than 366 days or less than 30 seconds from the current time they are
                 considered to be banned forever. Defaults to 0 (ban forever).
-
-            can_send_messages (``bool``, *optional*):
-                Pass True, if the user can send text messages, contacts, locations and venues.
-
-            can_send_media_messages (``bool``, *optional*):
-                Pass True, if the user can send audios, documents, photos, videos, video notes and voice notes,
-                implies can_send_messages.
-
-            can_send_other_messages (``bool``, *optional*):
-                Pass True, if the user can send animations, games, stickers and use inline bots,
-                implies can_send_media_messages.
-
-            can_add_web_page_previews (``bool``, *optional*):
-                Pass True, if the user may add web page previews to their messages, implies can_send_media_messages.
-
-            can_send_polls (``bool``, *optional*):
-                Pass True, if the user can send polls, implies can_send_media_messages.
-
-            can_change_info (``bool``, *optional*):
-                Pass True, if the user can change the chat title, photo and other settings.
-
-            can_invite_users (``bool``, *optional*):
-                Pass True, if the user can invite new users to the chat.
-
-            can_pin_messages (``bool``, *optional*):
-                Pass True, if the user can pin messages.
 
         Returns:
             :obj:`Chat`: On success, a chat object is returned.
@@ -588,15 +566,8 @@ class Chat(Object):
         return await self._client.restrict_chat_member(
             chat_id=self.id,
             user_id=user_id,
+            permissions=permissions,
             until_date=until_date,
-            can_send_messages=can_send_messages,
-            can_send_media_messages=can_send_media_messages,
-            can_send_other_messages=can_send_other_messages,
-            can_add_web_page_previews=can_add_web_page_previews,
-            can_send_polls=can_send_polls,
-            can_change_info=can_change_info,
-            can_invite_users=can_invite_users,
-            can_pin_messages=can_pin_messages
         )
 
     async def promote_member(
@@ -746,4 +717,126 @@ class Chat(Object):
             ValueError: In case the chat_id belongs to a user.
         """
 
-        return await self._client.export_invite_link(self.id)
+        return await self._client.export_chat_invite_link(self.id)
+
+    async def get_member(
+        self,
+        user_id: Union[int, str],
+    ) -> "pyrogram.ChatMember":
+        """Bound method *get_member* of :obj:`Chat`.
+
+        Use as a shortcut for:
+
+        .. code-block:: python
+
+            client.get_chat_member(
+                chat_id=chat_id,
+                user_id=user_id
+            )
+
+        Example:
+            .. code-block:: python
+
+                chat.get_member(user_id)
+
+        Returns:
+            :obj:`ChatMember`: On success, a chat member is returned.
+        """
+
+        return await self._client.get_chat_member(
+            self.id,
+            user_id=user_id
+        )
+
+    async def get_members(
+        self,
+        offset: int = 0,
+        limit: int = 200,
+        query: str = "",
+        filter: str = "all"
+    ) -> List["pyrogram.ChatMember"]:
+        """Bound method *get_members* of :obj:`Chat`.
+
+        Use as a shortcut for:
+
+        .. code-block:: python
+
+            client.get_chat_members(chat_id)
+
+        Example:
+            .. code-block:: python
+
+                # Get first 200 recent members
+                chat.get_members()
+
+        Returns:
+            List of :obj:`ChatMember`: On success, a list of chat members is returned.
+        """
+
+        return await self._client.get_chat_members(
+            self.id,
+            offset=offset,
+            limit=limit,
+            query=query,
+            filter=filter
+        )
+
+    def iter_members(
+        self,
+        limit: int = 0,
+        query: str = "",
+        filter: str = "all"
+    ) -> Optional[Generator["pyrogram.ChatMember", None, None]]:
+        """Bound method *iter_members* of :obj:`Chat`.
+
+        Use as a shortcut for:
+
+        .. code-block:: python
+
+            for member in client.iter_chat_members(chat_id):
+                print(member.user.first_name)
+
+        Example:
+            .. code-block:: python
+
+                for member in chat.iter_members():
+                    print(member.user.first_name)
+
+        Returns:
+            ``Generator``: A generator yielding :obj:`ChatMember` objects.
+        """
+
+        return self._client.iter_chat_members(
+            self.id,
+            limit=limit,
+            query=query,
+            filter=filter
+        )
+
+    async def add_members(
+        self,
+        user_ids: Union[Union[int, str], List[Union[int, str]]],
+        forward_limit: int = 100
+    ) -> bool:
+        """Bound method *add_members* of :obj:`Chat`.
+
+        Use as a shortcut for:
+
+        .. code-block:: python
+
+            client.add_chat_members(chat_id, user_id)
+
+        Example:
+            .. code-block:: python
+
+                chat.add_members(user_id)
+
+        Returns:
+            ``bool``: On success, True is returned.
+        """
+
+        return await self._client.add_chat_members(
+            self.id,
+            user_ids=user_ids,
+            forward_limit=forward_limit
+        )

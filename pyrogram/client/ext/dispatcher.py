@@ -1,20 +1,20 @@
-# Pyrogram - Telegram MTProto API Client Library for Python
-# Copyright (C) 2017-2018 Dan Tès <https://github.com/delivrance>
+#  Pyrogram - Telegram MTProto API Client Library for Python
+#  Copyright (C) 2017-2020 Dan <https://github.com/delivrance>
 #
-# This file is part of Pyrogram.
+#  This file is part of Pyrogram.
 #
-# Pyrogram is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as published
-# by the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+#  Pyrogram is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Lesser General Public License as published
+#  by the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
 #
-# Pyrogram is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Lesser General Public License for more details.
+#  Pyrogram is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser General Public License for more details.
 #
-# You should have received a copy of the GNU Lesser General Public License
-# along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
+#  You should have received a copy of the GNU Lesser General Public License
+#  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
 import logging
@@ -26,12 +26,14 @@ from pyrogram.api.types import (
     UpdateEditMessage, UpdateEditChannelMessage,
     UpdateDeleteMessages, UpdateDeleteChannelMessages,
     UpdateBotCallbackQuery, UpdateInlineBotCallbackQuery,
-    UpdateUserStatus, UpdateBotInlineQuery, UpdateMessagePoll
+    UpdateUserStatus, UpdateBotInlineQuery, UpdateMessagePoll,
+    UpdateBotInlineSend
 )
 from . import utils
 from ..handlers import (
     CallbackQueryHandler, MessageHandler, DeletedMessagesHandler,
-    UserStatusHandler, RawUpdateHandler, InlineQueryHandler, PollHandler
+    UserStatusHandler, RawUpdateHandler, InlineQueryHandler, PollHandler,
+    ChosenInlineResultHandler
 )
 
 log = logging.getLogger(__name__)
@@ -92,13 +94,17 @@ class Dispatcher:
         async def poll_parser(update, users, chats):
             return pyrogram.Poll._parse_update(self.client, update), PollHandler
 
+        async def chosen_inline_result_parser(update, users, chats):
+            return pyrogram.ChosenInlineResult._parse(self.client, update, users), ChosenInlineResultHandler
+
         self.update_parsers = {
             Dispatcher.MESSAGE_UPDATES: message_parser,
             Dispatcher.DELETE_MESSAGES_UPDATES: deleted_messages_parser,
             Dispatcher.CALLBACK_QUERY_UPDATES: callback_query_parser,
             (UpdateUserStatus,): user_status_parser,
             (UpdateBotInlineQuery,): inline_query_parser,
-            (UpdateMessagePoll,): poll_parser
+            (UpdateMessagePoll,): poll_parser,
+            (UpdateBotInlineSend,): chosen_inline_result_parser
         }
 
         self.update_parsers = {key: value for key_tuple, value in self.update_parsers.items() for key in key_tuple}

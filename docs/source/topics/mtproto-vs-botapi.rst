@@ -6,6 +6,12 @@ already superior to, what is usually called, the official Bot API, in many respe
 why Pyrogram might be a better choice for your project by comparing the two APIs, but first, let's make it clear what
 actually is the MTProto and the Bot API.
 
+.. contents:: Contents
+    :backlinks: none
+    :local:
+
+-----
+
 What is the MTProto API?
 ------------------------
 
@@ -72,12 +78,6 @@ HTTP Bot API. Using Pyrogram you can:
     - :guilabel:`+` **Has much more detailed types and powerful methods**
     - :guilabel:`--` The Bot API types often miss some useful information about Telegram entities and some of the
       methods are limited as well.
-
-.. hlist::
-    :columns: 1
-
-    - :guilabel:`+` **Get information about any public chat by usernames, even if not a member**
-    - :guilabel:`--` The Bot API simply doesn't support this
 
 .. hlist::
     :columns: 1

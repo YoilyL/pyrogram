@@ -1,20 +1,20 @@
-# Pyrogram - Telegram MTProto API Client Library for Python
-# Copyright (C) 2017-2019 Dan Tès <https://github.com/delivrance>
+#  Pyrogram - Telegram MTProto API Client Library for Python
+#  Copyright (C) 2017-2020 Dan <https://github.com/delivrance>
 #
-# This file is part of Pyrogram.
+#  This file is part of Pyrogram.
 #
-# Pyrogram is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as published
-# by the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+#  Pyrogram is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Lesser General Public License as published
+#  by the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
 #
-# Pyrogram is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Lesser General Public License for more details.
+#  Pyrogram is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser General Public License for more details.
 #
-# You should have received a copy of the GNU Lesser General Public License
-# along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
+#  You should have received a copy of the GNU Lesser General Public License
+#  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
 import binascii
@@ -100,6 +100,12 @@ class DownloadMedia(BaseClient):
 
                 # Download from file id
                 app.download_media("CAADBAADyg4AAvLQYAEYD4F7vcZ43AI")
+
+                # Keep track of the progress while downloading
+                def progress(current, total):
+                    print("{:.1f}%".format(current * 100 / total))
+
+                app.download_media(message, progress=progress)
         """
         error_message = "This message doesn't contain any downloadable media"
         available_media = ("audio", "document", "photo", "sticker", "animation", "video", "voice", "video_note")
@@ -147,13 +153,23 @@ class DownloadMedia(BaseClient):
 
             if media_type == 1:
                 unpacked = struct.unpack("<iiqqqiiiqi", decoded)
-                dc_id, photo_id, _, volume_id, size_type, peer_id, _, peer_access_hash, local_id = unpacked[1:]
+                dc_id, photo_id, _, volume_id, size_type, peer_id, x, peer_access_hash, local_id = unpacked[1:]
+
+                if x == 0:
+                    peer_type = "user"
+                elif x == -1:
+                    peer_id = -peer_id
+                    peer_type = "chat"
+                else:
+                    peer_id = utils.get_channel_id(peer_id - 1000727379968)
+                    peer_type = "channel"
 
                 data = FileData(
                     **get_existing_attributes(),
                     media_type=media_type,
                     dc_id=dc_id,
                     peer_id=peer_id,
+                    peer_type=peer_type,
                     peer_access_hash=peer_access_hash,
                     volume_id=volume_id,
                     local_id=local_id,

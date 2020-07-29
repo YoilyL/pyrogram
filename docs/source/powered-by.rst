@@ -9,13 +9,19 @@ This is a collection of remarkable projects made with Pyrogram.
 
     If you'd like to propose a project that's worth being listed here, feel free to open a `Feature Request`_.
 
+.. contents:: Contents
+    :backlinks: none
+    :local:
+
+-----
+
 Projects Showcase
 -----------------
 
 `YTAudioBot <https://t.me/ytaudio>`_
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-| **A YouTube audio downloader on Telegram, serving over 200k MAU.**
+| **A YouTube audio downloader on Telegram, serving over 450k active users each month.**
 | --- by `Dan <https://t.me/haskell>`_
 
 - Main: https://t.me/ytaudiobot
